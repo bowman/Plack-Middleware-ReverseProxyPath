@@ -21,14 +21,26 @@ sub call {
         # with $x_script_name
         if ( length $script_name >= length $x_traversal_path ) {
             $script_name =~ s/^\Q$x_traversal_path\E/$x_script_name/
-                or die;
+                or _throw_error(
+                    "HTTP_X_TRAVERSAL_PATH: $x_traversal_path\n" .
+                    "is not a prefix of \n" .
+                    "SCRIPT_NAME: $script_name\n" );
         } else {
             # $x_traversal_path is longer, borrow from path_info
             $x_traversal_path =~ s/^\Q$script_name\E//
-                or die;
+                or _throw_error(
+                    "SCRIPT_NAME $script_name\n" .
+                    "is not a prefix of \n" .
+                    "HTTP_X_TRAVERSAL_PATH: $x_traversal_path\n" );
             $script_name = $x_script_name;
+
             $path_info =~ s/^\Q$x_traversal_path\E//
-                or die;
+                or _throw_error(
+                    "Fragment: $x_traversal_path\n" .
+                    "is not a prefix of \n" .
+                    "PATH_INFO: $path_info\n" .
+                    " SCRIPT_NAME: $script_name\n" .
+                    " HTTP_X_TRAVERSAL_PATH: $env->{HTTP_X_TRAVERSAL_PATH}\n" );
         }
         $env->{SCRIPT_NAME} = $script_name;
         $env->{PATH_INFO}   = $path_info;
@@ -39,16 +51,27 @@ sub call {
     $self->app->($env);
 }
 
+sub _throw_error {
+    my ($message) = @_;
+    die Plack::Util::inline_object(
+        code => sub { 500 },
+        as_string => sub { $message },
+    );
+}
+
 1;
 
 __END__
 
 =head1 NAME
 
-Plack::Middleware::ReverseProxyPath - adjust paths on backend to match frontend
+Plack::Middleware::ReverseProxyPath - adjust proxied env to match client-facing
 
 =head1 SYNOPSIS
 
+  # configure your
+
+  # in your PSGI backend
   builder {
       enable_if { $_[0]->{REMOTE_ADDR} eq '127.0.0.1' }
           "Plack::Middleware::ReverseProxy";
@@ -74,16 +97,20 @@ adjustments to to scheme, host and port environment attributes.
 
 In order for this middleware to perform the path adjustments,
 you will need to configure your reverse proxy to send the following
-two headers:
+headers as applicable:
 
 =over 4
 
-=item X-Forwarded-Script-Name
+=item X-Script-Name
+
+The front-end prefix being forwarded FROM.
 
 The value of SCRIPT_NAME on the reverse proxy (which is not the request
 path used on the backend).
 
 =item X-Traversal-Path
+
+The backend prefix being forwarded TO.
 
 If you aren't forwarding to the root of a server, but to some
 deeper path, this contains the deeper path portion. So if you
@@ -91,34 +118,26 @@ forward to http://localhost:8080/myapp, and there is a request for
 /article/1, then the full path forwarded to will be
 /myapp/article/1. X-Traversal-Path will contain /myapp.
 
-=item X-Script-Name
-
-Explicitly define what the SCRIPT_NAME for the backend should be
-
 =back
 
 =head2 Logic
-
-In the absence of reverse proxy headers, leave SCRIPT_NAME and PATH_INFO alone.
-This allows direct connections to the backend to function.
 
 If there is either X-Traversal-Path or X-Script-Name:
 
   SCRIPT_NAME . PATH_INFO =~ s/^X-Traversal-Path/X-Script-Name/
 
-    Where the substitution can span SCRIPT_NAME and PATH_INFO with
-    part application to each?
+The X-Traversal-Path prefix will be stripped from SCRIPT_NAME
+(borrowing from PATH_INFO if anything is left over) and
+SCRIPT_NAME will be prefixed with X-Script-Name.
 
-    Where the X-Traversal-Path can span SCRIPT_NAME and PATH_INFO,
-    but the whole of X-Script-Name will be prefixed to SCRIPT_NAME
-    (ie PATH_INFO could have a segment removed)
+In the absence of reverse proxy headers, leave SCRIPT_NAME and PATH_INFO alone.
+This allows direct connections to the backend to function.
+Also, leave REQUEST_URI alone with to old/original value.
 
-Strip X-Traversal-Path from PATH_INFO
-
-SCRIPT_NAME = X-Script-Name . SCRIPT_NAME
-
-Front-end should clear client sent X-Traversal-Path and X-Script-Name
+Front-ends should clear client sent X-Traversal-Path and X-Script-Name
 (for security)
+
+=head2 Example
 
 =head1 TODO
 
@@ -131,6 +150,8 @@ This software is licensed under the same terms as Perl itself.
 =head1 AUTHOR
 
 Brad Bowman
+
+Feedback from Chris Prather (perigrin)
 
 =head1 SEE ALSO
 

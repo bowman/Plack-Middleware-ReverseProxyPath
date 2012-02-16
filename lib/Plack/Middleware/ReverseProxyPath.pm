@@ -51,10 +51,22 @@ sub call {
 
 sub _throw_error {
     my ($message) = @_;
+    die Plack::Middleware::ReverseProxyPath::Exception->new($message);
     die Plack::Util::inline_object(
         code => sub { 500 },
         as_string => sub { $message },
     );
+}
+
+{
+    package Plack::Middleware::ReverseProxyPath::Exception;
+    use overload '""' => \&as_string;
+    sub new {
+        my ($class, $message) = @_;
+        return bless { message => $message }, $class;
+    }
+    sub code { 500 }
+    sub as_string { $_[0]->{message} }
 }
 
 1;

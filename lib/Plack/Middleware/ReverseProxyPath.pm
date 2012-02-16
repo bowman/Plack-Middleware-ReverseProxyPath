@@ -15,10 +15,9 @@ sub call {
         my $x_script_name    = $env->{'HTTP_X_SCRIPT_NAME'}     || '';
         my $x_traversal_path = $env->{'HTTP_X_TRAVERSAL_PATH'}  || '';
         my $script_name      = $env->{SCRIPT_NAME};
-        my $path_info        = $env->{PATH_INFO};
 
-        # replace $script_name . $path_info prefix of $x_traversal_path
-        # with $x_script_name
+        # replace $script_name . $path_info
+        # prefix of $x_traversal_path with $x_script_name
         if ( length $script_name >= length $x_traversal_path ) {
             $script_name =~ s/^\Q$x_traversal_path\E/$x_script_name/
                 or _throw_error(
@@ -34,16 +33,15 @@ sub call {
                     "HTTP_X_TRAVERSAL_PATH: $x_traversal_path\n" );
             $script_name = $x_script_name;
 
-            $path_info =~ s/^\Q$x_traversal_path\E//
+            $env->{PATH_INFO} =~ s/^\Q$x_traversal_path\E//
                 or _throw_error(
                     "Fragment: $x_traversal_path\n" .
                     "is not a prefix of \n" .
-                    "PATH_INFO: $path_info\n" .
+                    "PATH_INFO: $env->{PATH_INFO}\n" .
                     " SCRIPT_NAME: $script_name\n" .
                     " HTTP_X_TRAVERSAL_PATH: $env->{HTTP_X_TRAVERSAL_PATH}\n" );
         }
         $env->{SCRIPT_NAME} = $script_name;
-        $env->{PATH_INFO}   = $path_info;
 
         # don't touch REQUEST_URI, it will continue to refer to the original
     }

@@ -9,11 +9,13 @@ sub call {
     my $self = shift;
     my $env = shift;
 
-    if (    $env->{'HTTP_X_SCRIPT_NAME'}
+    if (    $env->{'HTTP_X_FORWARDED_SCRIPT_NAME'}
+         || $env->{'HTTP_X_SCRIPT_NAME'}
          || $env->{'HTTP_X_TRAVERSAL_PATH'} ) {
 
-        my $x_script_name    = $env->{'HTTP_X_SCRIPT_NAME'}     || '';
-        my $x_traversal_path = $env->{'HTTP_X_TRAVERSAL_PATH'}  || '';
+        my $x_script_name    = $env->{'HTTP_X_FORWARDED_SCRIPT_NAME'}   ||
+                               $env->{'HTTP_X_SCRIPT_NAME'}             || '';
+        my $x_traversal_path = $env->{'HTTP_X_TRAVERSAL_PATH'}          || '';
         my $script_name      = $env->{SCRIPT_NAME};
 
         # replace $script_name . $path_info
@@ -118,6 +120,25 @@ forward to http://localhost:8080/myapp, and there is a request for
 
 =head1 DESCRIPTION
 
+Use case: reverse proxying /sub/path/ to http://0:5000/other/path/ .
+This middleware sits on the backend and uses headers sent by the proxy
+to hide the proxy plumbing from the backend app.
+
+Plack::Middleware::ReverseProxy does the host, port and scheme.
+Plack::Middleware::ReverseProxyPath adds handling of paths.
+
+The goal is to allow proxied backends to reconstruct and use
+the client-facing url.  ReverseProxy does most of the work
+and ReverseProxyPath does the paths.  The inner app can simply
+use $req->base to redirect, set cookies and the like.
+
+I find the term B<reverse proxy> leads to confusion, so I'll
+use B<front-end> to refer to the reverse proxy (eg. squid) which
+the client hits first, and B<back-end> to refer to the server
+that runs your PSGI application (eg. starman).
+
+
+
 Plack::Middleware::ReverseProxyPath adjusts SCRIPT_NAME and PATH_INFO
 based on headers from a reverse proxy so that it's inner app can pretend
 there is no proxy there.  This is useful when you aren't proxying and
@@ -128,8 +149,6 @@ entire server, but only a deeper path.  In Apache terms:
 It should be used with Plack::Middleware::ReverseProxy which does equivalent
 adjustments to the scheme, host and port environment attributes.
 
-The goal is to allow proxied backends to reconstruct and use
-the client-facing url.
 
 The reverse proxy then no longer needs ProxyPassReverse,
 ProxyPassReverseCookieDomain, ProxyPassReverseCookiePath,
@@ -143,11 +162,11 @@ headers (as applicable):
 
 =over 4
 
-=item X-Script-Name
+=item X-Forwarded-Script-Name
 
 The front-end prefix being forwarded FROM.
 
-(A clearer name might be X-Forwarded-Script-Name).
+(X-Script-Name is used by wsgiproxy and can be used instead).
 
 The value of SCRIPT_NAME on the reverse proxy (which is not the request
 path used on the backend).
@@ -155,6 +174,9 @@ path used on the backend).
 =item X-Traversal-Path
 
 The backend prefix being forwarded TO.
+
+This is the part of the backend uri that is plumbing which
+will be hidden from the app.
 
 If you aren't forwarding to the root of a server, but to some
 deeper path, this contains the deeper path portion. So if you
@@ -187,7 +209,8 @@ Front-ends should clear client-sent X-Traversal-Path and X-Script-Name
 
 Check uri encoding sanity and safety
 / chomping canonically
-
+Should REQUEST_URI be touched?
+X-Traversal-Query-String
 
 =head1 LICENSE
 

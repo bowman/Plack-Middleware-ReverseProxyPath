@@ -89,62 +89,56 @@ Plack::Middleware::ReverseProxyPath - adjust proxied env to match client-facing
 
   # Configure your reverse proxy (perlbal, varnish, apache, squid)
   # to send X-Forwarded-Script-Name and X-Traversal-Path headers.
+
   # This example just uses Plack::App::Proxy to demonstrate:
   sub proxy_builder {
     require Plack::App::Proxy;
 
+    # imagine this is https://somehost/fepath/from
     mount "http://localhost/fepath/from" => builder {
-        enable mw {
-            my ($app, $env) = @_;
-            $env->{'HTTP_X_FORWARDED_SCRIPT_NAME'} = '/fepath/from';
-            $env->{'HTTP_X_TRAVERSAL_PATH'}        = '/bepath/to';
-            $app->($env);
-        };
-#         enable sub {
-#            my $app = shift;
-#            sub {
-#                my $env = shift;
-#                $env->{'X-Forwarded-Script-Name'} = '/fepath/from';
-#                $env->{'X-Traversal-Path'}        = '/bepath/to';
-#                $app->($env);
-#            };
-#        };
-        Plack::App::Proxy->new(remote => 'http://localhost:5000/bepath/to')->to_app;
-        #\&echo_env;
-    };
-    mount "http://localhost/otherfe" => sub {
-        my $env = shift;
-        $env->{'X-Forwarded-Script-Name'} = '/otherfe';
-        $env->{'X-Traversal-Path'}        = '/bepath/to';
-        Plack::App::Proxy->new(remote => 'http://0:5000')->to_app;
+      enable mw {
+          my ($app, $env) = @_;
+
+          # Headers for ReverseProxyPath
+          $env->{'HTTP_X_FORWARDED_SCRIPT_NAME'} = '/fepath/from';
+          $env->{'HTTP_X_TRAVERSAL_PATH'}        = '/bepath/to';
+
+          # Headers for ReverseProxy (often already sent)
+          $env->{'HTTP_X_FORWARDED_HOST'}        = 'somehost'; # pretending..
+          $env->{'HTTP_X_FORWARDED_PORT'}        = 443;
+          $app->($env);
+      };
+      Plack::App::Proxy->new(
+            remote => 'http://0:5000/bepath/to' ) ->to_app;
     };
   };
 
-  # Then in your PSGI backend
+  # In your Plack backend
   my $app = builder {
 
-    # /bepath/to/* is proxied
-    mount "/bepath/to" => builder {
-
-      # ReverseProxy sets scheme, host and port using standard headers
+    # /bepath/to/* is proxied (can also be accessed directly)
+    mount "/bepath/to" => builder {        # base adjustments:
+                                           # 1) http://0:5000/bepath/to/x
+      # ReverseProxy fixes scheme/host/port
       enable "ReverseProxy";
-
-      # ReverseProxyPath adjusts SCRIPT_NAME and PATH_INFO using new headers
+                                           # 2) https://somehost/bepath/to/x
+      # ReverseProxyPath uses new headers
+      # fixes SCRIPT_NAME and PATH_INFO
       enable "ReverseProxyPath";
+                                           # 3) https://somehost/fepath/from/x
 
       # $req->base + $req->path now is the client-facing url
       # so URLs, Set-Cookie, Location can work naively
       mount "/base" => \&echo_base;
       mount "/env"  => \&echo_env;
-
     };
+    mount "/env" => \&echo_env;
 
-    #mount "/" => \&echo_base;
-
-    # proxy to myself to keep the synopsis short
+    # proxy to myself to keep the synopsis short (needs >1 worker)
     proxy_builder();
   };
 
+  # synopsis plumbing:
   sub echo_base { require Plack::Request;
       [200, [ qw(Content-type text/plain) ],
             [ Plack::Request->new(shift)->base . "\n" ] ]

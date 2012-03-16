@@ -10,11 +10,9 @@ sub call {
     my $env = shift;
 
     if (    $env->{'HTTP_X_FORWARDED_SCRIPT_NAME'}
-         || $env->{'HTTP_X_SCRIPT_NAME'}
          || $env->{'HTTP_X_TRAVERSAL_PATH'} ) {
 
-        my $x_script_name    = $env->{'HTTP_X_FORWARDED_SCRIPT_NAME'}   ||
-                               $env->{'HTTP_X_SCRIPT_NAME'}             || '';
+        my $x_script_name    = $env->{'HTTP_X_FORWARDED_SCRIPT_NAME'}   || '';
         my $x_traversal_path = $env->{'HTTP_X_TRAVERSAL_PATH'}          || '';
         my $script_name      = $env->{SCRIPT_NAME};
 
@@ -219,9 +217,6 @@ headers (as applicable):
 
 The front-end prefix being forwarded FROM.
 
-(X-Script-Name is used by wsgiproxy and can be used instead,
-X-Forwarded-Script-Name takes precedence).
-
 The value of SCRIPT_NAME on the front-end.
 
 =item X-Traversal-Path
@@ -247,14 +242,14 @@ If there is either X-Traversal-Path or X-Forwarded-Script-Name:
 
 The X-Traversal-Path prefix will be stripped from SCRIPT_NAME
 (borrowing from PATH_INFO if anything is left over) and
-SCRIPT_NAME will be prefixed with X-Script-Name.
+SCRIPT_NAME will be prefixed with X-Forwarded-Script-Name.
 
 In the absence of reverse proxy headers, leave SCRIPT_NAME and PATH_INFO alone.
 This allows direct connections to the back-end to function.
 Also, leave REQUEST_URI alone with the old/original value.
 
 Front-ends should clear client-sent X-Traversal-Path,
-X-Forwarded-Script-Name and X-Script-Name
+and X-Forwarded-Script-Name
 (for security).
 
 =head2 Examples
@@ -294,6 +289,7 @@ Feedback from Chris Prather (perigrin)
 
 L<Plack::Middleware::ReverseProxy>
 
-L<http://pythonpaste.org/wsgiproxy/> source for header names
+L<http://pythonpaste.org/wsgiproxy/> python middleware used as
+a template (although it uses X-Script-Name, instead).
 
 =cut

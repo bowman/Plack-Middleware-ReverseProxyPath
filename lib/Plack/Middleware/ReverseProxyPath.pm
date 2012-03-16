@@ -81,6 +81,18 @@ Plack::Middleware::ReverseProxyPath - adjust proxied env to match client-facing
 
 =head1 SYNOPSIS
 
+Generally you'll simple use the middle-ware:
+
+  enable "ReverseProxy";
+  enable "ReverseProxyPath";
+
+Below is an elaborate example that includes both a dummy reverse proxy
+front-end and the back-end using ReverseProxyPath.  Run with something like:
+
+  PLACK_SERVER=Starman perl -x -Ilib ./lib/Plack/Middleware/ReverseProxyPath.pm
+
+(Sample output below)
+
 #!perl -MPlack::Runner
 #line 85
   sub mw(&);
@@ -116,7 +128,7 @@ Plack::Middleware::ReverseProxyPath - adjust proxied env to match client-facing
     };
   };
 
-  # In your Plack backend
+  # In your Plack back-end
   my $app = builder {
 
     # /bepath/to/* is proxied (can also be accessed directly)
@@ -157,16 +169,25 @@ Plack::Middleware::ReverseProxyPath - adjust proxied env to match client-facing
   Plack::Runner->new->run($app);
 __END__
 
+ # with ReverseProxyPath and ReverseProxy applied
+ GET http://localhost:5000/fepath/from/base
+ https://somehost/fepath/from/base
+
+ # talking directly to the back-end
+ GET http://localhost:5000/bepath/to/base
+ http://localhost:5000/bepath/to/base
+
 =head1 DESCRIPTION
 
 Use case: reverse proxying /sub/path/ to http://0:5000/other/path/ .
-This middleware sits on the backend and uses headers sent by the proxy
-to hide the proxy plumbing from the backend app.
+This middleware sits on the back-end and uses headers sent by the proxy
+to hide the proxy plumbing from the back-end app.
 
-Plack::Middleware::ReverseProxy does the host, port and scheme.
-Plack::Middleware::ReverseProxyPath adds handling of paths.
+Plack::Middleware::B<ReverseProxy> does the host, port and scheme.
 
-The goal is to allow proxied backends to reconstruct and use
+Plack::Middleware::B<ReverseProxyPath> adds handling of paths.
+
+The goal is to allow proxied back-end apps to reconstruct and use
 the client-facing url.  ReverseProxy does most of the work
 and ReverseProxyPath does the paths.  The inner app can simply
 use $req->base to redirect, set cookies and the like.
@@ -176,10 +197,8 @@ use B<front-end> to refer to the reverse proxy (eg. squid) which
 the client hits first, and B<back-end> to refer to the server
 that runs your PSGI application (eg. starman).
 
-
-
 Plack::Middleware::ReverseProxyPath adjusts SCRIPT_NAME and PATH_INFO
-based on headers from a reverse proxy so that it's inner app can pretend
+based on headers from a front-end so that it's inner app can pretend
 there is no proxy there.  This is useful when you aren't proxying and
 entire server, but only a deeper path.  In Apache terms:
 
@@ -187,11 +206,6 @@ entire server, but only a deeper path.  In Apache terms:
 
 It should be used with Plack::Middleware::ReverseProxy which does equivalent
 adjustments to the scheme, host and port environment attributes.
-
-
-The reverse proxy then no longer needs ProxyPassReverse,
-ProxyPassReverseCookieDomain, ProxyPassReverseCookiePath,
-mod_proxy_html and other proxy-level patch-ups.
 
 =head2 Required Headers
 
@@ -205,17 +219,17 @@ headers (as applicable):
 
 The front-end prefix being forwarded FROM.
 
-(X-Script-Name is used by wsgiproxy and can be used instead).
+(X-Script-Name is used by wsgiproxy and can be used instead,
+X-Forwarded-Script-Name takes precedence).
 
-The value of SCRIPT_NAME on the reverse proxy (which is not the request
-path used on the backend).
+The value of SCRIPT_NAME on the front-end.
 
 =item X-Traversal-Path
 
-The backend prefix being forwarded TO.
+The back-end prefix being forwarded TO.
 
-This is the part of the backend uri that is plumbing which
-will be hidden from the app.
+This is the part of the back-end URI that is just plumbing which
+should be hidden from the app.
 
 If you aren't forwarding to the root of a server, but to some
 deeper path, this contains the deeper path portion. So if you
@@ -227,29 +241,44 @@ forward to http://localhost:8080/myapp, and there is a request for
 
 =head2 Path Adjustment Logic
 
-If there is either X-Traversal-Path or X-Script-Name:
+If there is either X-Traversal-Path or X-Forwarded-Script-Name:
 
-  SCRIPT_NAME . PATH_INFO =~ s/^X-Traversal-Path/X-Script-Name/
+  SCRIPT_NAME . PATH_INFO =~ s/^${X-Traversal-Path}/${X-Forwarded-Script-Name}/
 
 The X-Traversal-Path prefix will be stripped from SCRIPT_NAME
 (borrowing from PATH_INFO if anything is left over) and
 SCRIPT_NAME will be prefixed with X-Script-Name.
 
 In the absence of reverse proxy headers, leave SCRIPT_NAME and PATH_INFO alone.
-This allows direct connections to the backend to function.
+This allows direct connections to the back-end to function.
 Also, leave REQUEST_URI alone with the old/original value.
 
-Front-ends should clear client-sent X-Traversal-Path and X-Script-Name
+Front-ends should clear client-sent X-Traversal-Path,
+X-Forwarded-Script-Name and X-Script-Name
 (for security).
 
-=head2 Example
+=head2 Examples
+
+See the F<examples> directory.
+
+If you do use this with a new front-end then please send the configuration
+for inclusion.
+
+=head2 Exceptions
+
+If there are problems with the configuration or headers then a
+Plack::Middleware::HTTPException compatible exception will be thrown.
+It will be a 500 that stringifies with information about the bad
+headers.  This might be considered sensitive information, in which
+case, you should catch and handle them.
 
 =head1 TODO
 
-Check uri encoding sanity and safety
-/ chomping canonically
-Should REQUEST_URI be touched?
-X-Traversal-Query-String
+ * Check uri encoding sanity and safety
+ * // chomping canonically
+ * Should REQUEST_URI be touched?
+ * X-Traversal-Query-String
+ * Plack::Middleware::Lint
 
 =head1 LICENSE
 

@@ -106,6 +106,9 @@ Plack::Middleware::ReverseProxyPath - adjust proxied env to match client-facing
           # Headers for ReverseProxy (often already sent)
           $env->{'HTTP_X_FORWARDED_HOST'}        = 'somehost'; # pretending..
           $env->{'HTTP_X_FORWARDED_PORT'}        = 443;
+
+          die "Need MP" if !$env->{'psgi.multiprocess'}
+                        && !$env->{'psgi.multithread'};
           $app->($env);
       };
       Plack::App::Proxy->new(

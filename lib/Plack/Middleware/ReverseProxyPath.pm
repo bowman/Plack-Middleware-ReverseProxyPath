@@ -219,13 +219,13 @@ headers (as applicable):
 
 =item X-Forwarded-Script-Name
 
-The front-end prefix being forwarded FROM.
+The front-end prefix being forwarded FROM.  This is the replacement.
 
 The value of SCRIPT_NAME on the front-end.
 
 =item X-Traversal-Path
 
-The back-end prefix being forwarded TO.
+The back-end prefix being forwarded TO.  This is to be replaced.
 
 This is the part of the back-end URI that is just plumbing which
 should be hidden from the app.
@@ -240,12 +240,12 @@ forward to http://localhost:8080/myapp, and there is a request for
 
 =head2 Path Adjustment Logic
 
-If there is either X-Traversal-Path or X-Forwarded-Script-Name:
+If there is either X-Traversal-Path or X-Forwarded-Script-Name, roughly:
 
   SCRIPT_NAME . PATH_INFO =~ s/^${X-Traversal-Path}/${X-Forwarded-Script-Name}/
 
 The X-Traversal-Path prefix will be stripped from SCRIPT_NAME
-(borrowing from PATH_INFO if anything is left over) and
+(borrowing from PATH_INFO if needed) and
 SCRIPT_NAME will be prefixed with X-Forwarded-Script-Name.
 
 In the absence of reverse proxy headers, leave SCRIPT_NAME and PATH_INFO alone.

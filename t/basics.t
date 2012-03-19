@@ -228,10 +228,67 @@ my @tests = (
         like $_->content, qr{ ^ REQUEST_URI: \s /deep/env_wrapped $ }xm;
     },
 
+    (GET "/base_wrapped/path/more",
+        $XFSN => '', $XTP => '/base_wrapped/path' )
+    => sub {
+        like $_->content, qr{ / $ }x, "borrow from PATH_INFO";
+    },
 
+    (GET "/env_wrapped/path/more",
+        $XFSN => '', $XTP => '/env_wrapped/path' )
+    => sub {
+        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm;
+        like $_->content, qr{ ^ PATH_INFO:   \s /more $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/path/more $ }xm;
+    },
 
-    # doubled //
+# From PSGI spec
+# One of SCRIPT_NAME or PATH_INFO MUST be set. When REQUEST_URI is /,
+# PATH_INFO should be / and SCRIPT_NAME should be empty. SCRIPT_NAME
+# MUST NOT be /, but MAY be empty.
+
+    # borrowed path_info and trailing / on request
+    (GET "/base_wrapped/path/",
+        $XFSN => '', $XTP => '/base_wrapped/path' )
+    => sub {
+        like $_->content, qr{ / $ }x, "borrow from PATH_INFO, trailing req /";
+    },
+
+    (GET "/env_wrapped/path/",
+        $XFSN => '', $XTP => '/env_wrapped/path' )
+    => sub {
+        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm;
+        like $_->content, qr{ ^ PATH_INFO:   \s / $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/path/ $ }xm;
+    },
+
+    # '/' replacement (this is a misconfiguration, use '')
+    (GET "/base_wrapped", $XFSN => '/', $XTP => '/base_wrapped' ) => sub {
+        like $_->content, qr{ / $ }x, "/ replacement";
+    },
+
+    (GET "/env_wrapped", $XFSN => '/', $XTP => '/env_wrapped' ) => sub {
+        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped $ }xm;
+    },
+
+    # doubled // (see Plack::Middleware::NoMultipleSlashes)
+    (GET "/base_wrapped//path///",
+        $XFSN => '/', $XTP => '/base_wrapped//path//' ) # 
+    => sub {
+        like $_->content, qr{ [^/]/ $ }x, "multiple //";
+    },
+    (GET "/env_wrapped//path///",
+        $XFSN => '/', $XTP => '/env_wrapped//path//' )
+    => sub {
+        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm; # should never be just /
+        like $_->content, qr{ ^ PATH_INFO:   \s / $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped//path/// $ }xm;
+    },
+
     # trailing / on headers
+
+
 );
 
 # this doesn't return is_success

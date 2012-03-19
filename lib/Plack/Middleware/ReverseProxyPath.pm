@@ -40,6 +40,9 @@ sub call {
                     "PATH_INFO: $env->{PATH_INFO}\n" .
                     " SCRIPT_NAME: $script_name\n" .
                     " HTTP_X_TRAVERSAL_PATH: $env->{HTTP_X_TRAVERSAL_PATH}\n" );
+
+            # add PSGI required '/' (bad headers w/ trailing / could do it)
+            $env->{PATH_INFO} =~ s!^([^/])!/$1!;
         }
 
         if ( $script_name eq '/' ) { # PSGI doesn't allow '/' only

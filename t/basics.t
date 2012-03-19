@@ -262,16 +262,6 @@ my @tests = (
         like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/path/ $ }xm;
     },
 
-    # '/' replacement (this is a misconfiguration, use '')
-    (GET "/base_wrapped", $XFSN => '/', $XTP => '/base_wrapped' ) => sub {
-        like $_->content, qr{ / $ }x, "/ replacement";
-    },
-
-    (GET "/env_wrapped", $XFSN => '/', $XTP => '/env_wrapped' ) => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped $ }xm;
-    },
-
     # doubled // (see Plack::Middleware::NoMultipleSlashes)
     (GET "/base_wrapped//path///",
         $XFSN => '/', $XTP => '/base_wrapped//path//' ) # 
@@ -288,6 +278,38 @@ my @tests = (
 
     # trailing / on headers
 
+    # '/' replacement (this is a misconfiguration, use '')
+    (GET "/base_wrapped", $XFSN => '/', $XTP => '/base_wrapped' ) => sub {
+        like $_->content, qr{ / $ }x, "/ replacement";
+    },
+
+    (GET "/env_wrapped", $XFSN => '/', $XTP => '/env_wrapped' ) => sub {
+        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped $ }xm;
+    },
+
+    # '/' replaced (this is a misconfiguration, use '')
+    (GET "/base_wrapped/", $XFSN => '', $XTP => '/base_wrapped/' ) => sub {
+        like $_->content, qr{ [^/]/ $ }x, "trailing / trav path";
+    },
+
+    (GET "/env_wrapped/", $XFSN => '', $XTP => '/env_wrapped/' ) => sub {
+        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/ $ }xm;
+    },
+
+
+    (GET "/base_wrapped/more", $XFSN => '/', $XTP => '/base_wrapped/' )
+    => sub {
+        like $_->content, qr{ [^/]/ $ }x, "/ replacement";
+    },
+
+    (GET "/env_wrapped/more", $XFSN => '/', $XTP => '/env_wrapped/' ) => sub {
+        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm;
+        # PSGI requires PATH_INFO to start with a /
+        like $_->content, qr{ ^ PATH_INFO: \s /more $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/more $ }xm;
+    },
 
 );
 

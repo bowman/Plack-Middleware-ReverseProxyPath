@@ -259,6 +259,11 @@ Front-ends should clear client-sent X-Traversal-Path,
 and X-Forwarded-Script-Name
 (for security).
 
+Note that while it is intended that this module operates on one
+directory segment at a time, that is not enforced at present.
+For example, /script_name adjusted with ( /script => /cgi ) would
+result in /cgi_name.
+
 =head2 Examples
 
 See the F<examples> directory.

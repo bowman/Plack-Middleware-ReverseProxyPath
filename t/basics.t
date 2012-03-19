@@ -151,6 +151,16 @@ my @tests = (
         like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped $ }xm;
     },
 
+    # non-segment prefix
+    (GET "/base_wrapped", $XFSN => '/this', $XTP => '/base' ) => sub {
+        like $_->content, qr{ /this_wrapped $ }x, "non-segment prefix $XFSN";
+    },
+
+    (GET "/env_wrapped", $XFSN => '/this', $XTP => '/env' ) => sub {
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /this_wrapped $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped $ }xm;
+    },
+
     # check extra headers are there too.
     (GET "/env_wrapped", $XFSN => '/this', $XTP => '/env_wrapped' ) => sub {
         like $_->content, qr{ ^ $HXFSN : \s /this $ }xm;

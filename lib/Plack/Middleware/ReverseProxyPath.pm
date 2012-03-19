@@ -63,13 +63,13 @@ sub _throw_error {
 
 {
     package Plack::Middleware::ReverseProxyPath::Exception;
-    use overload '""' => \&as_string;
+    use overload '""' => \&message;
     sub new {
         my ($class, $message) = @_;
         return bless { message => $message }, $class;
     }
     sub code { 500 }
-    sub as_string { $_[0]->{message} }
+    sub message { $_[0]->{message} }
 }
 
 1;

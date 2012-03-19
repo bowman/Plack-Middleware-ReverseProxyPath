@@ -131,17 +131,6 @@ my @tests = (
 
     # extra headers are used (THIS_MARKER)
 
-    # bad headers => server error
-    (GET "/base_wrapped", $XFSN => '/this', $XTP => '/that' ) => sub {
-        is $_->code, 500; # bogus headers cause an error
-        like $_->content, qr{is not a prefix of};
-    },
-    # bad headers => server error
-    (GET "/base_wrapped", $XFSN => '/this', $XTP => '/base_wrapped/X' ) => sub {
-        is $_->code, 500; # bogus headers cause an error
-        like $_->content, qr{is not a prefix of};
-    },
-
     (GET "/base_wrapped", $XFSN => '/this', $XTP => '/base_wrapped' ) => sub {
         like $_->content, qr{ /this $ }x, "replace prefix $XFSN";
     },
@@ -318,19 +307,6 @@ my @tests = (
 
 );
 
-# this doesn't return is_success
-test_psgi
-    app => $url_map,
-    client => sub {
-        my $cb  = shift;
-        my $req = GET "/";
-        note $req->as_string;
-        my $res = $cb->($req);
-        local $_ = $res;
-        is $_->code, 404;
-        like $_->content, qr/Not Found/;
-    };
-
 while ( my ($req, $test) = splice( @tests, 0, 2 ) ) {
     test_psgi
         app => $url_map,
@@ -338,10 +314,46 @@ while ( my ($req, $test) = splice( @tests, 0, 2 ) ) {
             my $cb  = shift;
             note $req->as_string;
             my $res = $cb->($req);
+            ok($res->is_success(), "is_success")
+                or diag $req->as_string, $res->as_string;
             local $_ = $res;
             $test->($res, $req);
-            # ok($res->is_success(), "is_success")
-                # or diag $req->as_string, $res->as_string;
+        };
+}
+
+# these tests don't return is_success
+my @error_tests = (
+    # bad url (not ours)
+    (GET "/" ) => sub {
+        is $_->code, 404;
+        like $_->content, qr/Not Found/;
+    },
+
+    # bad headers => server error
+    (GET "/base_wrapped", $XFSN => '/this', $XTP => '/that' ) => sub {
+        is $_->code, 500; # bogus headers cause an error
+        like $_->content, qr{is not a prefix of};
+    },
+
+    # bad headers => server error
+    (GET "/base_wrapped", $XFSN => '/this', $XTP => '/base_wrapped/X' ) => sub {
+        is $_->code, 500; # bogus headers cause an error
+        like $_->content, qr{is not a prefix of};
+    },
+);
+
+# test error conditions
+while ( my ($req, $test) = splice( @error_tests, 0, 2 ) ) {
+    test_psgi
+        app => $url_map,
+        client => sub {
+            my $cb  = shift;
+            note $req->as_string;
+            my $res = $cb->($req);
+            ok(!$res->is_success(), "NOT is_success")
+                or diag $req->as_string, $res->as_string;
+            local $_ = $res;
+            $test->($res, $req);
         };
 }
 

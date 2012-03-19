@@ -277,10 +277,7 @@ case, you should catch and handle them.
 
 =head1 TODO
 
- * Check uri encoding sanity and safety
- * // chomping canonically
  * Should REQUEST_URI be touched?
- * X-Traversal-Query-String
  * Plack::Middleware::Lint
 
 =head1 LICENSE

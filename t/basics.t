@@ -16,6 +16,17 @@ my $HXTP  = 'HTTP_X_TRAVERSAL_PATH';
 
 my $expecting_failure;
 
+sub echo_base {
+    [200, [ qw(Content-type text/plain) ],
+        [ Plack::Request->new(shift)->base . "\n" ] ]
+}
+
+sub echo_env {
+    my ($env) = @_;
+    [200, [ qw(Content-type text/plain) ],
+        [ map { "$_: $env->{$_}\n" } keys %$env ] ]
+}
+
 my $base_inner = \&echo_base;
 my $env_inner  = \&echo_env;
 
@@ -357,17 +368,5 @@ while ( my ($req, $test) = splice( @error_tests, 0, 2 ) ) {
         };
 }
 
-# no headers == unwrapped
-
 done_testing();
 
-sub echo_base {
-    [200, [ qw(Content-type text/plain) ],
-        [ Plack::Request->new(shift)->base . "\n" ] ]
-}
-
-sub echo_env {
-    my ($env) = @_;
-    [200, [ qw(Content-type text/plain) ],
-        [ map { "$_: $env->{$_}\n" } keys %$env ] ]
-}

@@ -41,6 +41,10 @@ sub call {
                     " SCRIPT_NAME: $script_name\n" .
                     " HTTP_X_TRAVERSAL_PATH: $env->{HTTP_X_TRAVERSAL_PATH}\n" );
         }
+
+        if ( $script_name eq '/' ) { # PSGI doesn't allow '/' only
+            $script_name = '';
+        }
         $env->{SCRIPT_NAME} = $script_name;
 
         # don't touch REQUEST_URI, it will continue to refer to the original

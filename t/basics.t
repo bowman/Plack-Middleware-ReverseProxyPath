@@ -136,6 +136,11 @@ my @tests = (
         is $_->code, 500; # bogus headers cause an error
         like $_->content, qr{is not a prefix of};
     },
+    # bad headers => server error
+    (GET "/base_wrapped", $XFSN => '/this', $XTP => '/base_wrapped/X' ) => sub {
+        is $_->code, 500; # bogus headers cause an error
+        like $_->content, qr{is not a prefix of};
+    },
 
     (GET "/base_wrapped", $XFSN => '/this', $XTP => '/base_wrapped' ) => sub {
         like $_->content, qr{ /this $ }x, "replace prefix $XFSN";

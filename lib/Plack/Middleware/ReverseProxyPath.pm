@@ -59,10 +59,6 @@ sub call {
 sub _throw_error {
     my ($message) = @_;
     die Plack::Middleware::ReverseProxyPath::Exception->new($message);
-    die Plack::Util::inline_object(
-        code => sub { 500 },
-        as_string => sub { $message },
-    );
 }
 
 {

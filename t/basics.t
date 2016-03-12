@@ -50,211 +50,214 @@ $url_map->map( "/deep/deep/env_wrapped"    => $env_wrapped );
 
 # request => sub { response checks }
 
+my $empty = q();
+$empty = qr/\s{0}/ if $] <= 5.008008; # Workaround for a 5.8.8 bug.
+
 my @tests = (
     # sanity check tests, not using rpp
     (GET "/base_inner") => sub {
-        like $_->content, qr{ /base_inner $ }x;
+        like $_->content, qr{ /base_inner $empty $ }x;
     },
 
     (GET "/env_inner") => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s /env_inner $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_inner $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /env_inner $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_inner $empty $ }xm;
     },
 
     (GET "/base_inner/path") => sub {
-        like $_->content, qr{ /base_inner $ }x;
+        like $_->content, qr{ /base_inner $empty $ }x;
     },
 
     (GET "/env_inner/path") => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s /env_inner $ }xm;
-        like $_->content, qr{ ^ PATH_INFO:   \s /path $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_inner/path $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /env_inner $empty $ }xm;
+        like $_->content, qr{ ^ PATH_INFO:   \s /path $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_inner/path $empty $ }xm;
     },
 
     (GET "/deep/base_inner") => sub {
-        like $_->content, qr{ /deep/base_inner $ }x;
+        like $_->content, qr{ /deep/base_inner $empty $ }x;
     },
 
     (GET "/deep/env_inner") => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s /deep/env_inner $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /deep/env_inner $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /deep/env_inner $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /deep/env_inner $empty $ }xm;
     },
 
     (GET "/deep/deep/base_inner") => sub {
-        like $_->content, qr{ /deep/deep/base_inner $ }x;
+        like $_->content, qr{ /deep/deep/base_inner $empty $ }x;
     },
 
     (GET "/deep/deep/env_inner") => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s /deep/deep/env_inner $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /deep/deep/env_inner $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /deep/deep/env_inner $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /deep/deep/env_inner $empty $ }xm;
     },
 
     # extra headers ignored
     (GET "/base_inner", $XFSN => '/this', $XTP => '/that' ) => sub {
-        like $_->content, qr{ /base_inner $ }x;
+        like $_->content, qr{ /base_inner $empty $ }x;
     },
 
     (GET "/env_inner", $XFSN => '/this', $XTP => '/that' ) => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s /env_inner $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_inner $ }xm;
-        like $_->content, qr{ ^ $HXFSN : \s /this $ }xm;
-        like $_->content, qr{ ^ $HXTP : \s /that $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /env_inner $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_inner $empty $ }xm;
+        like $_->content, qr{ ^ $HXFSN : \s /this $empty $ }xm;
+        like $_->content, qr{ ^ $HXTP : \s /that $empty $ }xm;
     },
 
     # now we go via ReverseProxyPath to test it
     #  (all these are the same as above to THIS_MARKER)
     (GET "/base_wrapped") => sub {
-        like $_->content, qr{ /base_wrapped $ }x;
+        like $_->content, qr{ /base_wrapped $empty $ }x;
     },
 
     (GET "/env_wrapped") => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s /env_wrapped $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /env_wrapped $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped $empty $ }xm;
     },
 
     (GET "/base_wrapped/path") => sub {
-        like $_->content, qr{ /base_wrapped $ }x;
+        like $_->content, qr{ /base_wrapped $empty $ }x;
     },
 
     (GET "/env_wrapped/path") => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s /env_wrapped $ }xm;
-        like $_->content, qr{ ^ PATH_INFO:   \s /path $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/path $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /env_wrapped $empty $ }xm;
+        like $_->content, qr{ ^ PATH_INFO:   \s /path $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/path $empty $ }xm;
     },
 
     (GET "/deep/base_wrapped") => sub {
-        like $_->content, qr{ /deep/base_wrapped $ }x;
+        like $_->content, qr{ /deep/base_wrapped $empty $ }x;
     },
 
     (GET "/deep/env_wrapped") => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s /deep/env_wrapped $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /deep/env_wrapped $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /deep/env_wrapped $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /deep/env_wrapped $empty $ }xm;
     },
 
     (GET "/deep/deep/base_wrapped") => sub {
-        like $_->content, qr{ /deep/deep/base_wrapped $ }x;
+        like $_->content, qr{ /deep/deep/base_wrapped $empty $ }x;
     },
 
     (GET "/deep/deep/env_wrapped") => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s /deep/deep/env_wrapped $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /deep/deep/env_wrapped $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /deep/deep/env_wrapped $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /deep/deep/env_wrapped $empty $ }xm;
     },
 
     # extra headers are used (THIS_MARKER)
 
     (GET "/base_wrapped", $XFSN => '/this', $XTP => '/base_wrapped' ) => sub {
-        like $_->content, qr{ /this $ }x, "replace prefix $XFSN";
+        like $_->content, qr{ /this $empty $ }x, "replace prefix $XFSN";
     },
 
     (GET "/env_wrapped", $XFSN => '/this', $XTP => '/env_wrapped' ) => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s /this $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /this $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped $empty $ }xm;
     },
 
     # non-segment prefix
     (GET "/base_wrapped", $XFSN => '/this', $XTP => '/base' ) => sub {
-        like $_->content, qr{ /this_wrapped $ }x, "non-segment prefix $XFSN";
+        like $_->content, qr{ /this_wrapped $empty $ }x, "non-segment prefix $XFSN";
     },
 
     (GET "/env_wrapped", $XFSN => '/this', $XTP => '/env' ) => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s /this_wrapped $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /this_wrapped $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped $empty $ }xm;
     },
 
     # check extra headers are there too.
     (GET "/env_wrapped", $XFSN => '/this', $XTP => '/env_wrapped' ) => sub {
-        like $_->content, qr{ ^ $HXFSN : \s /this $ }xm;
-        like $_->content, qr{ ^ $HXTP : \s /env_wrapped $ }xm;
+        like $_->content, qr{ ^ $HXFSN : \s /this $empty $ }xm;
+        like $_->content, qr{ ^ $HXTP : \s /env_wrapped $empty $ }xm;
     },
 
     (GET "/base_wrapped/path", $XFSN => '/this', $XTP => '/base_wrapped' )
     => sub {
-        like $_->content, qr{ /this $ }x, "replace prefix $XFSN";
+        like $_->content, qr{ /this $empty $ }x, "replace prefix $XFSN";
     },
 
     (GET "/env_wrapped/path", $XFSN => '/this', $XTP => '/env_wrapped' )
     => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s /this $ }xm;
-        like $_->content, qr{ ^ PATH_INFO:   \s /path $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/path $ }xm;
-        like $_->content, qr{ ^ $HXFSN : \s /this $ }xm;
-        like $_->content, qr{ ^ $HXTP : \s /env_wrapped $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /this $empty $ }xm;
+        like $_->content, qr{ ^ PATH_INFO:   \s /path $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/path $empty $ }xm;
+        like $_->content, qr{ ^ $HXFSN : \s /this $empty $ }xm;
+        like $_->content, qr{ ^ $HXTP : \s /env_wrapped $empty $ }xm;
     },
 
     (GET "/deep/base_wrapped", $XFSN => '/this', $XTP => '/deep/base_wrapped' )
     => sub {
-        like $_->content, qr{ /this $ }x, "replace prefix $XFSN";
+        like $_->content, qr{ /this $empty $ }x, "replace prefix $XFSN";
     },
 
     (GET "/deep/env_wrapped", $XFSN => '/this', $XTP => '/deep/env_wrapped' )
     => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s /this $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /deep/env_wrapped $ }xm;
-        like $_->content, qr{ ^ $HXFSN : \s /this $ }xm;
-        like $_->content, qr{ ^ $HXTP : \s /deep/env_wrapped $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /this $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /deep/env_wrapped $empty $ }xm;
+        like $_->content, qr{ ^ $HXFSN : \s /this $empty $ }xm;
+        like $_->content, qr{ ^ $HXTP : \s /deep/env_wrapped $empty $ }xm;
     },
 
     # borrow from PATH_INFO
     (GET "/base_wrapped/path/more",
         $XFSN => '/this', $XTP => '/base_wrapped/path' )
     => sub {
-        like $_->content, qr{ /this $ }x, "borrow from PATH_INFO";
+        like $_->content, qr{ /this $empty $ }x, "borrow from PATH_INFO";
     },
 
     (GET "/env_wrapped/path/more",
         $XFSN => '/this', $XTP => '/env_wrapped/path' )
     => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s /this $ }xm;
-        like $_->content, qr{ ^ PATH_INFO:   \s /more $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/path/more $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /this $empty $ }xm;
+        like $_->content, qr{ ^ PATH_INFO:   \s /more $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/path/more $empty $ }xm;
     },
 
     # trailing / on request
     (GET "/base_wrapped/", $XFSN => '/this', $XTP => '/base_wrapped' )
     => sub {
-        like $_->content, qr{ /this $ }x, "trailing / on request";
+        like $_->content, qr{ /this $empty $ }x, "trailing / on request";
     },
 
     (GET "/env_wrapped/", $XFSN => '/this', $XTP => '/env_wrapped' )
     => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s /this $ }xm;
-        like $_->content, qr{ ^ PATH_INFO:   \s / $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/ $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s /this $empty $ }xm;
+        like $_->content, qr{ ^ PATH_INFO:   \s / $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/ $empty $ }xm;
     },
 
     # empty replacement
     (GET "/base_wrapped", $XFSN => '', $XTP => '/base_wrapped' ) => sub {
-        like $_->content, qr{ / $ }x, "empty replacement";
+        like $_->content, qr{ / $empty $ }x, "empty replacement";
     },
 
     (GET "/env_wrapped", $XFSN => '', $XTP => '/env_wrapped' ) => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped $empty $ }xm;
     },
 
     (GET "/deep/base_wrapped", $XFSN => '', $XTP => '/deep/base_wrapped' )
     => sub {
-        like $_->content, qr{ / $ }x, "replace prefix $XFSN";
+        like $_->content, qr{ / $empty $ }x, "replace prefix $XFSN";
     },
 
     (GET "/deep/env_wrapped", $XFSN => '', $XTP => '/deep/env_wrapped' )
     => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /deep/env_wrapped $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /deep/env_wrapped $empty $ }xm;
     },
 
     (GET "/base_wrapped/path/more",
         $XFSN => '', $XTP => '/base_wrapped/path' )
     => sub {
-        like $_->content, qr{ / $ }x, "borrow from PATH_INFO";
+        like $_->content, qr{ / $empty $ }x, "borrow from PATH_INFO";
     },
 
     (GET "/env_wrapped/path/more",
         $XFSN => '', $XTP => '/env_wrapped/path' )
     => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm;
-        like $_->content, qr{ ^ PATH_INFO:   \s /more $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/path/more $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s $empty $ }xm;
+        like $_->content, qr{ ^ PATH_INFO:   \s /more $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/path/more $empty $ }xm;
     },
 
 # From PSGI spec
@@ -266,64 +269,64 @@ my @tests = (
     (GET "/base_wrapped/path/",
         $XFSN => '', $XTP => '/base_wrapped/path' )
     => sub {
-        like $_->content, qr{ / $ }x, "borrow from PATH_INFO, trailing req /";
+        like $_->content, qr{ / $empty $ }x, "borrow from PATH_INFO, trailing req /";
     },
 
     (GET "/env_wrapped/path/",
         $XFSN => '', $XTP => '/env_wrapped/path' )
     => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm;
-        like $_->content, qr{ ^ PATH_INFO:   \s / $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/path/ $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s $empty $ }xm;
+        like $_->content, qr{ ^ PATH_INFO:   \s / $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/path/ $empty $ }xm;
     },
 
     # doubled // (see Plack::Middleware::NoMultipleSlashes)
     (GET "/base_wrapped//path///",
         $XFSN => '/', $XTP => '/base_wrapped//path//' ) # 
     => sub {
-        like $_->content, qr{ [^/]/ $ }x, "multiple //";
+        like $_->content, qr{ [^/]/ $empty $ }x, "multiple //";
     },
     (GET "/env_wrapped//path///",
         $XFSN => '/', $XTP => '/env_wrapped//path//' )
     => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm; # should never be just /
-        like $_->content, qr{ ^ PATH_INFO:   \s / $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped//path/// $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s $empty $ }xm; # should never be just /
+        like $_->content, qr{ ^ PATH_INFO:   \s / $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped//path/// $empty $ }xm;
     },
 
     # trailing / on headers
 
     # '/' replacement (this is a misconfiguration, use '')
     (GET "/base_wrapped", $XFSN => '/', $XTP => '/base_wrapped' ) => sub {
-        like $_->content, qr{ / $ }x, "/ replacement";
+        like $_->content, qr{ / $empty $ }x, "/ replacement";
     },
 
     (GET "/env_wrapped", $XFSN => '/', $XTP => '/env_wrapped' ) => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped $empty $ }xm;
     },
 
     # '/' replaced (this is a misconfiguration, use '')
     (GET "/base_wrapped/", $XFSN => '', $XTP => '/base_wrapped/' ) => sub {
-        like $_->content, qr{ [^/]/ $ }x, "trailing / trav path";
+        like $_->content, qr{ [^/]/ $empty $ }x, "trailing / trav path";
     },
 
     (GET "/env_wrapped/", $XFSN => '', $XTP => '/env_wrapped/' ) => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/ $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/ $empty $ }xm;
     },
 
 
     (GET "/base_wrapped/more", $XFSN => '/', $XTP => '/base_wrapped/' )
     => sub {
-        like $_->content, qr{ [^/]/ $ }x, "/ replacement";
+        like $_->content, qr{ [^/]/ $empty $ }x, "/ replacement";
     },
 
     (GET "/env_wrapped/more", $XFSN => '/', $XTP => '/env_wrapped/' ) => sub {
-        like $_->content, qr{ ^ SCRIPT_NAME: \s $ }xm;
+        like $_->content, qr{ ^ SCRIPT_NAME: \s $empty $ }xm;
         # PSGI requires PATH_INFO to start with a /
-        like $_->content, qr{ ^ PATH_INFO: \s /more $ }xm;
-        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/more $ }xm;
+        like $_->content, qr{ ^ PATH_INFO: \s /more $empty $ }xm;
+        like $_->content, qr{ ^ REQUEST_URI: \s /env_wrapped/more $empty $ }xm;
     },
 
 );

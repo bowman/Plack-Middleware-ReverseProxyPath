@@ -1,5 +1,6 @@
 package Plack::Middleware::ReverseProxyPath;
 
+use 5.006;
 use strict;
 use warnings;
 use parent qw(Plack::Middleware);
@@ -53,7 +54,7 @@ sub call {
         # don't touch REQUEST_URI, it will continue to refer to the original
     }
 
-    $self->app->($env);
+    return $self->app->($env);
 }
 
 sub _throw_error {
@@ -68,8 +69,8 @@ sub _throw_error {
         my ($class, $message) = @_;
         return bless { message => $message }, $class;
     }
-    sub code { 500 }
-    sub message { $_[0]->{message} }
+    sub code { return 500 }
+    sub message { return $_[0]->{message} }
 }
 
 1;
